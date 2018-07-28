@@ -12,8 +12,8 @@
 ;;	Xavier Maillard <xavier@maillard.im>
 ;; Created: Sep 4, 2007
 ;; Version: HEAD
-;; Package-Version: 20180507.1421
-;; Identity: $Id: c8a4790a04f28664fd27958dc34c17e442e560cb $
+;; Package-Version: 20180728.1502
+;; Identity: $Id: 0c20f2130f1cb8835e9124749ee6fcdf6212b518 $
 ;; Keywords: twitter web
 ;; URL: http://twmode.sf.net/
 
@@ -96,7 +96,7 @@
   :group 'hypermedia)
 
 (defconst twittering-mode-version "HEAD")
-(defconst twittering-mode-identity "$Id: c8a4790a04f28664fd27958dc34c17e442e560cb $")
+(defconst twittering-mode-identity "$Id: 0c20f2130f1cb8835e9124749ee6fcdf6212b518 $")
 (defvar twittering-api-host "api.twitter.com")
 (defvar twittering-api-search-host "search.twitter.com")
 (defvar twittering-web-host "twitter.com")
@@ -953,7 +953,11 @@ the value of the last form in TIMEOUT-FORMS."
 
 This function is the same as `start-process' except that SENTINEL must
 be invoked when the process is successfully started."
-  (let ((proc (apply 'start-process name buffer program args)))
+  (let* (;; By binding `process-connection-type' to nil,
+	 ;; ensure that the new process communicates with Emacs
+	 ;; via a pipe instead of a pty.
+	 (process-connection-type nil)
+	 (proc (apply 'start-process name buffer program args)))
     (when (and proc (functionp sentinel))
       (if (twittering-process-alive-p proc)
 	  (set-process-sentinel proc sentinel)
@@ -3902,10 +3906,11 @@ This function requires `epa' or `alpaca' library."
 	     (epa-display-error context)
 	   (message "%s" (cdr err)))
 	 nil))
-      (setq decrypted-result
-	    (epa--decode-coding-string
-	     decrypted-result
-	     (or coding-system-for-read 'undecided)))
+      (when decrypted-result
+	(setq decrypted-result
+	      (epa--decode-coding-string
+	       decrypted-result
+	       (or coding-system-for-read 'undecided))))
       (if (epg-context-result-for context 'verify)
 	  (epa-display-info (epg-verify-result-to-string
 			     (epg-context-result-for context 'verify))))

@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180725.2224
+;; Package-Version: 20180728.1330
 ;; Keywords: help, lisp
 ;; Version: 0.13
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1249,7 +1249,7 @@ buffer."
          (push sym keymaps))))
     keymaps))
 
-(defun helpful--key-sequences (command-sym keymap)
+(defun helpful--key-sequences (command-sym keymap global-keycodes)
   "Return all the key sequences of COMMAND-SYM in KEYMAP."
   (let* ((keycodes
           ;; Look up this command in the keymap, its parent and the
@@ -1265,12 +1265,11 @@ buffer."
          ;; Look up this command in the global map.
          (global-keycodes
           (unless (eq keymap global-map)
-            (where-is-internal
-             command-sym (list global-map) nil t))))
+            global-keycodes)))
     (->> keycodes
          ;; Ignore keybindings from the parent or global map.
-         (--remove (-contains-p parent-keycodes it))
-         (--remove (-contains-p global-keycodes it))
+         (--remove (or (-contains-p global-keycodes it)
+                       (-contains-p parent-keycodes it)))
          ;; Convert raw keycode vectors into human-readable strings.
          (-map #'key-description))))
 
@@ -1288,11 +1287,13 @@ from parent keymaps.
 same bindings as `global-map'."
   (let* ((keymap-syms (helpful--all-keymap-syms))
          (keymap-sym-vals (-map #'symbol-value keymap-syms))
+         (global-keycodes (where-is-internal
+                           command-sym (list global-map) nil t))
          matching-keymaps)
     ;; Look for this command in all keymaps bound to variables.
     (-map
      (-lambda ((keymap-sym . keymap))
-       (let ((key-sequences (helpful--key-sequences command-sym keymap)))
+       (let ((key-sequences (helpful--key-sequences command-sym keymap global-keycodes)))
          (when (and key-sequences (not (eq keymap-sym 'widget-global-map)))
            (push (cons (symbol-name keymap-sym) key-sequences)
                  matching-keymaps))))
@@ -1305,7 +1306,7 @@ same bindings as `global-map'."
        ;; Only consider this keymap if we didn't find it bound to a variable.
        (when (and (keymapp keymap)
                   (not (memq keymap keymap-sym-vals)))
-         (let ((key-sequences (helpful--key-sequences command-sym keymap)))
+         (let ((key-sequences (helpful--key-sequences command-sym keymap global-keycodes)))
            (when key-sequences
              (push (cons (format "minor-mode-map-alist (%s)" minor-mode)
                          key-sequences)
@@ -1315,11 +1316,37 @@ same bindings as `global-map'."
 
     matching-keymaps))
 
+(defun helpful--merge-alists (l1 l2)
+  "Given two alists mapping symbols to lists, return a single
+alist with the lists concatenated."
+  (let* ((l1-keys (-map #'-first-item l1))
+         (l2-keys (-map #'-first-item l2))
+         (l2-extra-keys (-difference l2-keys l1-keys))
+         (l2-extra-values
+          (--map (assoc it l2) l2-extra-keys))
+         (l1-with-values
+          (-map (-lambda ((key . values))
+                  (cons key (append values
+                                    (cdr (assoc key l2)))))
+                l1)))
+    (append l1-with-values l2-extra-values)))
+
+(defun helpful--keymaps-containing-aliases (command-sym)
+  "Return a list of pairs mapping keymap symbols to the
+keybindings for COMMAND-SYM in each keymap.
+
+Includes keybindings for aliases, unlike
+`helpful--keymaps-containing'."
+  (let* ((aliases (helpful--aliases 'helpful--dummy-command t))
+         (syms (cons command-sym aliases))
+         (syms-keymaps (-map #'helpful--keymaps-containing syms)))
+    (-reduce #'helpful--merge-alists syms-keymaps)))
+
 (defun helpful--format-keys (command-sym)
   "Describe all the keys that call COMMAND-SYM."
   (let (mode-lines
         global-lines)
-    (--each (helpful--keymaps-containing command-sym)
+    (--each (helpful--keymaps-containing-aliases command-sym)
       (-let [(map . keys) it]
         (dolist (key keys)
           (push
