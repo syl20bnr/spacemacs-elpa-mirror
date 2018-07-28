@@ -2,7 +2,7 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: https://github.com/nex3/dart-mode
-;; Package-Version: 20180722.525
+;; Package-Version: 20180727.2133
 ;; Version: 1.0.3
 ;; Package-Requires: ((emacs "24.5") (cl-lib "0.5") (dash "2.10.0") (flycheck "0.23") (s "1.10"))
 ;; Keywords: language
@@ -81,6 +81,9 @@
 
 (require 'cc-mode)
 (eval-when-compile
+  (and (= emacs-major-version 24)
+       (>= emacs-minor-version 4)
+       (require 'cl))
   (require 'cc-langs)
   (require 'cc-fonts))
 
