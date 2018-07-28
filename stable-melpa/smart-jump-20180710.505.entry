@@ -1,2 +1,0 @@
-
-(smart-jump . [(20180710 505) ((emacs (25 1)) (dumb-jump (0 5 1))) "Smart go to definition." tar ((:commit . "1b216416a977dc94a6f3b5e40adde7b502d97c2f") (:keywords "tools") (:authors ("James Nguyen" . "james@jojojames.com")) (:maintainer "James Nguyen" . "james@jojojames.com") (:url . "https://github.com/jojojames/smart-jump"))])
