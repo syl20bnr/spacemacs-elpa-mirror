@@ -1,2 +1,0 @@
-
-(js-auto-format-mode . [(20180123 1630) ((emacs (24))) "Minor mode for auto-formatting JavaScript code" single ((:commit . "6bd44162ac422304803f606278bb0c08ab940a5d") (:keywords "languages") (:authors ("ybiquitous" . "ybiquitous@gmail.com")) (:maintainer "ybiquitous" . "ybiquitous@gmail.com") (:url . "https://github.com/ybiquitous/js-auto-format-mode"))])

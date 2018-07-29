@@ -1,0 +1,2 @@
+
+(anki-editor . [(20180729 918) ((emacs (25)) (request (0 3 0)) (dash (2 12 0))) "Minor mode for making Anki cards with Org" tar ((:commit . "d5007efab36b93ad5a7b438b8d9e454c9b89b7a0") (:authors ("Lei Tan")) (:maintainer "Lei Tan") (:url . "https://github.com/louietan/anki-editor"))])
