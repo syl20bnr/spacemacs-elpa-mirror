@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pythonic
-;; Package-Version: 20180727.910
+;; Package-Version: 20180728.1943
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25") (s "1.9") (f "0.17.2"))
 
@@ -48,6 +48,11 @@
   "Determine docker remote virtual environment."
   (and (pythonic-remote-p)
        (s-equals-p (pythonic-remote-method) "docker")))
+
+(defun pythonic-remote-ssh-p ()
+  "Determine ssh remote virtual environment."
+  (and (pythonic-remote-p)
+       (s-equals-p (pythonic-remote-method) "ssh")))
 
 (defun pythonic-remote-vagrant-p ()
   "Determine vagrant remote virtual environment."

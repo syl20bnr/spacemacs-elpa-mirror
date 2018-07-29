@@ -19,7 +19,7 @@ Purpose:
     well suited to be used outside of org, e.g. in folder names,
     ticket systems or on printed documents.
  - 'Working set' (short: ws) is a small set of nodes for your daily work;
-    it can be managed easily and traversed very fast. All related tasks
+    it can be managed easily and traversed very fast.  All related tasks
     are also available through the interactive function
     org-index-working-set, which see.
 

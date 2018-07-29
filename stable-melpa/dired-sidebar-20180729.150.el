@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180710.504
+;; Package-Version: 20180729.150
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -346,29 +346,22 @@ will check if buffer is stale through `auto-revert-mode'.")
     ;; set up in the minor mode.
     (when dired-sidebar-use-evil-integration
       (with-eval-after-load 'evil
-        (when (fboundp 'evil-define-minor-mode-key)
-          (evil-define-minor-mode-key 'normal 'dired-sidebar-mode
-            [tab] 'dired-sidebar-subtree-toggle
-            (kbd "C-m") 'dired-sidebar-find-file
-            (kbd "RET") 'dired-sidebar-find-file
-            (kbd "<return>") 'dired-sidebar-find-file
-            "^" 'dired-sidebar-up-directory
-            (kbd "C-o") 'dired-sidebar-find-file-alt
-            [mouse-2] 'dired-sidebar-mouse-subtree-cycle-or-find-file))
-        ;; Although `evil-define-minor-mode-key' is supposed to define bindings
-        ;; immediately, I did not see that happen when restoring `dired-sidebar'
-        ;; with `desktop-read'.
-        ;; Force keymaps to normalize.
-        (when (fboundp 'evil-normalize-keymaps)
-          (evil-normalize-keymaps))))
+        (when (fboundp 'evil-define-key*)
+          (evil-define-key* 'normal map
+                            [tab] 'dired-sidebar-subtree-toggle
+                            (kbd "C-m") 'dired-sidebar-find-file
+                            (kbd "RET") 'dired-sidebar-find-file
+                            (kbd "<return>") 'dired-sidebar-find-file
+                            "^" 'dired-sidebar-up-directory
+                            (kbd "C-o") 'dired-sidebar-find-file-alt
+                            [mouse-2] 'dired-sidebar-mouse-subtree-cycle-or-find-file))))
     map)
   "Keymap used for symbol `dired-sidebar-mode'.")
 
-(define-minor-mode dired-sidebar-mode
-  "A minor mode that leverages `dired' to emulate a Tree browser."
-  :init-value nil
-  :lighter ""
-  :keymap dired-sidebar-mode-map
+(define-derived-mode dired-sidebar-mode dired-mode
+  "Dired-sidebar"
+  "A major mode that puts `dired' in a sidebar."
+  :group 'dired-sidebar
 
   ;; Hack for https://github.com/jojojames/dired-sidebar/issues/18.
   ;; Would be open to a better fix...
@@ -379,7 +372,7 @@ will check if buffer is stale through `auto-revert-mode'.")
       "Return nil for `dired-remember-hidden'.
 
 Works around marker pointing to wrong buffer in Emacs 25."
-      (if (bound-and-true-p dired-sidebar-mode)
+      (if (eq major-mode 'dired-sidebar-mode)
           nil
         (apply f args)))
     (advice-remove 'dired-remember-hidden 'dired-sidebar-remember-hidden-hack)
@@ -497,6 +490,7 @@ Works around marker pointing to wrong buffer in Emacs 25."
            dired-sidebar-follow-file-idle-delay
            t #'dired-sidebar-follow-file)))
 
+  (dired-build-subdir-alist)
   (dired-unadvertise (dired-current-directory))
   (dired-sidebar-update-buffer-name)
   (dired-sidebar-update-state (current-buffer)))
@@ -607,7 +601,8 @@ This is dependent on `dired-subtree-cycle'."
           (dired-sidebar-set-width dired-sidebar-width))))
     (with-current-buffer buffer
       ;; For the case where we've already turned on the mode.
-      (unless (bound-and-true-p dired-sidebar-mode)
+      ;; FIXME: Not sure if we need this anymore..
+      (unless (eq major-mode 'dired-sidebar-mode)
         (dired-sidebar-mode)))
     (dired-sidebar-update-state buffer)))
 
@@ -913,8 +908,7 @@ both accounting for the currently selected window."
     ((and (eq major-mode 'term-mode)
           dired-sidebar-use-term-integration)
      (dired-sidebar-term-get-pwd))
-    ((and (eq major-mode 'dired-mode)
-          (not dired-sidebar-mode))
+    ((and (eq major-mode 'dired-mode))
      default-directory)
     ((and (eq major-mode 'ibuffer-mode)
           (fboundp 'ibuffer-current-buffer)
@@ -941,8 +935,7 @@ This may return nil if there's no suitable file to show."
          (fboundp 'magit-file-at-point)
          (magit-file-at-point))
     (expand-file-name (magit-file-at-point)))
-   ((and (eq major-mode 'dired-mode)
-         (not dired-sidebar-mode))
+   ((and (eq major-mode 'dired-mode))
     ;; Not sure if `dired-get-filename' is more appropriate.
     (condition-case nil
         (dired-get-file-for-visit)

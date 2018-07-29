@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180726.1828
+;; Package-Version: 20180728.2114
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.1.1
 
@@ -283,7 +283,7 @@ This is needed in order to keep Emacs from hanging when doing many syncs."
            :window-behavior (or (org-noter--notes-window-behavior-property ast) org-noter-notes-window-behavior)
            :window-location (or (org-noter--notes-window-location-property ast) org-noter-notes-window-location)
            :doc-split-percentage (or (org-noter--doc-split-percentage-property ast)
-                                          org-noter-doc-split-percentage)
+                                     org-noter-doc-split-percentage)
            :auto-save-last-location (or (org-noter--auto-save-location-property ast)
                                         org-noter-auto-save-last-location)
            :hide-other (or (org-noter--hide-other-property ast) org-noter-hide-other)
@@ -1446,13 +1446,17 @@ Only available with PDF Tools."
 
                        (push (vector heading-text (cons page top) 'inside nil) output-data))))))))
 
+
          (when output-data
-           (setq output-data
-                 (sort output-data
-                       (lambda (e1 e2)
-                         (or (not (aref e1 1))
-                             (and (aref e2 1)
-                                  (org-noter--compare-location-cons '< (aref e1 1) (aref e2 1)))))))
+           (if (memq 'annots answer)
+               (setq output-data
+                     (sort output-data
+                           (lambda (e1 e2)
+                             (or (not (aref e1 1))
+                                 (and (aref e2 1)
+                                      (org-noter--compare-location-cons '< (aref e1 1) (aref e2 1)))))))
+             (setq output-data (nreverse output-data)))
+
            (push (vector "Skeleton" nil 1 nil) output-data)))
 
        (with-current-buffer (org-noter--session-notes-buffer session)

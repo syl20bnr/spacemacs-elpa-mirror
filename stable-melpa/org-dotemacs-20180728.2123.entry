@@ -1,0 +1,2 @@
+
+(org-dotemacs . [(20180728 2123) ((org (7 9 3)) (cl-lib (0 5))) "Store your emacs config as an org file, and choose which bits to load." single ((:commit . "36b0bcf4f3ff7d5c318db4eeeb171a32d5ea8164") (:keywords "local") (:authors ("Joe Bloggs" . "vapniks@yahoo.com")) (:maintainer "Joe Bloggs" . "vapniks@yahoo.com") (:url . "https://github.com/vapniks/org-dotemacs"))])
