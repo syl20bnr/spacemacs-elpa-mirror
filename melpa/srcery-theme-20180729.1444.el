@@ -2,8 +2,8 @@
 ;; Copyright (C) 2018 Daniel Berg
 
 ;; Author: Daniel Berg
-;; URL: https://github.com/roosta/emacs-srcery
-;; Package-Version: 20180623.1319
+;; URL: https://github.com/srcery-colors/srcery-emacs
+;; Package-Version: 20180729.1444
 
 ;; Version: 0.1.0
 ;; Keywords: faces
@@ -26,11 +26,11 @@
 
 ;;; Commentary:
 
-;; Port of vim-srcery: https://github.com/roosta/vim-srcery , a dark color theme
+;; Port of vim-srcery: https://github.com/srcery-colors/srcery-vim , a dark color theme
 ;; with with focus on clearly defined contrastig colors and relative ease of
 ;; use. Srcery should play well with a 256 color terminal, provided the terminal
 ;; colors are set to srcery colors. See here for sample terminal configs:
-;; https://github.com/roosta/vim-srcery/tree/master/term_colors
+;; https://github.com/srcery-colors/srcery-terminal
 
 ;;; Credits
 
@@ -60,6 +60,11 @@
 
 (defcustom srcery-invert-matches nil
   "Use inverse video for search matches."
+  :type 'boolean
+  :group 'srcery)
+
+(defcustom srcery-invert-region t
+  "Use inverse video for region."
   :type 'boolean
   :group 'srcery)
 
@@ -223,16 +228,12 @@
 
    ;; basics
    `(cursor
-     ((,srcery-class ,(if srcery-invert-matches
-                          `(:inverse-video t)
-                        `(:background ,srcery-bright-white :foreground ,srcery-black)))
-      (,srcery-256-class ,(if srcery-invert-matches
-                              `(:inverse-video t)
-                            `(:background ,srcery-256-bright-white :foreground ,srcery-256-black)))))
+     ((,srcery-class (:background ,srcery-bright-white :foreground ,srcery-black :inverse-video t))
+      (,srcery-256-class (:background ,srcery-256-bright-white :foreground ,srcery-256-black :inverse-video t))))
 
    `(custom-button
-     ((,srcery-class :background ,srcery-black :foreground ,srcery-bright-white :box (:line-width 2 :style released-button))
-      (,srcery-256-class :background ,(if srcery-transparent-background nil srcery-256-black) :foreground ,srcery-256-bright-white :box (:line-width 2 :style released-button))))
+     ((,srcery-class (:background ,srcery-black :foreground ,srcery-bright-white :box (:line-width 2 :style released-button)))
+      (,srcery-256-class (:background ,(if srcery-transparent-background nil srcery-256-black) :foreground ,srcery-256-bright-white :box (:line-width 2 :style released-button)))))
 
    `(default
       ((,srcery-class (:background ,srcery-black :foreground ,srcery-bright-white))
@@ -317,10 +318,10 @@
    `(highlight
      ((,srcery-class ,(if srcery-invert-matches
                           `(:inverse-video t)
-                        `(:background ,srcery-magenta :foreground ,srcery-bright-white)))
+                        `(:background ,srcery-gray-4 :weight bold)))
       (,srcery-256-class ,(if srcery-invert-matches
                               `(:inverse-video t)
-                            `(:background ,srcery-256-magenta :foreground ,srcery-256-bright-white)))))
+                            `(:background ,srcery-256-gray4 :weight bold)))))
 
    `(hl-line
      ((,srcery-class (:background ,srcery-bright-black))
@@ -329,21 +330,21 @@
    `(isearch
      ((,srcery-class ,(if srcery-invert-matches
                           `(:inverse-video t :underline t :weight bold)
-                        `(:underline t :background ,srcery-magenta :foreground ,srcery-bright-white :weight bold)))
+                        `(:underline t :background ,srcery-gray-4 :weight bold)))
       (,srcery-256-class ,(if srcery-invert-matches
                               `(:inverse-video t :underline t :weight bold)
-                            `(:underline t :background ,srcery-256-magenta :foreground ,srcery-256-bright-white :weight bold)))))
+                            `(:underline t :background ,srcery-256-gray4 :weight bold)))))
    `(isearch-fail
-    ((,srcery-class (:foreground ,srcery-black :background ,srcery-bright-red))
-     (,srcery-256-class (:foreground ,srcery-256-black :background ,srcery-256-bright-red))))
+    ((,srcery-class (:foreground ,srcery-red))
+     (,srcery-256-class (:foreground ,srcery-256-red))))
 
    `(lazy-highlight
      ((,srcery-class ,(if srcery-invert-matches
                           `(:inverse-video t)
-                        `(:background ,srcery-magenta :foreground ,srcery-bright-white)))
+                        `(:background ,srcery-gray-4 :weight bold)))
       (,srcery-256-class ,(if srcery-invert-matches
                               `(:inverse-video t)
-                            `(:background ,srcery-256-magenta :foreground ,srcery-256-bright-white)))))
+                            `(:background ,srcery-256-gray4 :weight bold)))))
 
    `(link
      ((,srcery-class (:inherit font-lock-comment-face :underline t))
@@ -356,10 +357,10 @@
    `(match
      ((,srcery-class ,(if srcery-invert-matches
                           `(:inverse-video t)
-                        `(:background ,srcery-magenta :foreground ,srcery-bright-white)))
+                        `(:background ,srcery-gray-4 :weight bold)))
       (,srcery-256-class ,(if srcery-invert-matches
                               `(:inverse-video t)
-                            `(:background ,srcery-256-magenta :foreground ,srcery-256-bright-white)))))
+                            `(:background ,srcery-256-gray4 :weight bold)))))
 
    `(minibuffer-prompt
      ((,srcery-class (:weight bold :foreground ,srcery-yellow))
@@ -370,8 +371,12 @@
       (,srcery-256-class (:foreground ,srcery-256-gray3))))
 
    `(region
-     ((,srcery-class (:inverse-video ,t))
-      (,srcery-256-class (:inverse-video ,t))))
+     ((,srcery-class ,(if srcery-invert-region
+                          `(:inverse-video t)
+                        `(:background ,srcery-hard-black :weight bold)))
+      (,srcery-256-class ,(if srcery-invert-region
+                              `(:inverse-video t)
+                            `(:background ,srcery-256-hard-black :weight bold)))))
 
    `(secondary-selection
      ((,srcery-class (:background ,srcery-gray-2))
@@ -972,10 +977,10 @@
    `(evil-search-highlight-persist-highlight-face
      ((,srcery-class ,(if srcery-invert-matches
                           `(:inverse-video t)
-                        `(:background ,srcery-magenta :foreground ,srcery-bright-white)))
+                        `(:background ,srcery-gray-4 :weight bold)))
       (,srcery-256-class ,(if srcery-invert-matches
                               `(:inverse-video t)
-                            `(:background ,srcery-256-magenta :foreground ,srcery-256-bright-white)))))
+                            `(:background ,srcery-256-gray4 :weight bold)))))
 
    `(flycheck-error
      ((,srcery-class (:foreground ,srcery-red :underline t))
@@ -1830,6 +1835,14 @@
    `(smerge-refined-removed
      ((,srcery-class (:foreground ,srcery-red))
       (,srcery-256-class (:foreground ,srcery-256-red))))
+
+   `(smerge-upper
+     ((,srcery-class (:foreground ,srcery-red))
+      (,srcery-256-class (:foreground ,srcery-256-red))))
+
+   `(smerge-lower
+     ((,srcery-class (:foreground ,srcery-green))
+      (,srcery-256-class (:foreground ,srcery-256-green))))
 
    ;; man
    `(Man-overstrike
