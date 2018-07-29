@@ -1,0 +1,2 @@
+
+(elisp-def . [(20180728 1608) ((dash (2 12 0)) (f (0 19 0)) (s (1 11 0)) (emacs (24 3))) "macro-aware go-to-definition for elisp" single ((:commit . "03dcfa955dd0ea7521e2f82b788b9e59fbfd7016") (:keywords "lisp") (:authors ("Wilfred Hughes" . "me@wilfred.me.uk")) (:maintainer "Wilfred Hughes" . "me@wilfred.me.uk"))])
